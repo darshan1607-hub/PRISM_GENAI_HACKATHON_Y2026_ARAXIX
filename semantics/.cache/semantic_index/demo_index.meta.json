@@ -1,0 +1,224 @@
+{
+  "dimension": 768,
+  "metric": "cosine",
+  "count": 28,
+  "metadata": [
+    {
+      "file": "src/app.js",
+      "start_line": 1,
+      "end_line": 7,
+      "code": "// Sample JavaScript Application File\nfunction calculateTax(amount, rate) {\n  if (amount < 0) {\n    throw new Error(\"Amount cannot be negative\");\n  }\n  return amount * rate;\n}",
+      "chunk_type": "function",
+      "name": "calculateTax"
+    },
+    {
+      "file": "src/app.js",
+      "start_line": 9,
+      "end_line": 11,
+      "code": "const TAX_RATE = 0.08;\nconst total = calculateTax(150, TAX_RATE);\nconsole.log(\"Calculated total:\", total);",
+      "chunk_type": "block"
+    },
+    {
+      "file": "src/app.js",
+      "start_line": 13,
+      "end_line": 13,
+      "code": "module.exports = { calculateTax, TAX_RATE };",
+      "chunk_type": "block"
+    },
+    {
+      "file": "src/auth.ts",
+      "start_line": 1,
+      "end_line": 2,
+      "code": "// Authentication Module\nimport { DatabaseConnection, db } from './db';",
+      "chunk_type": "block"
+    },
+    {
+      "file": "src/auth.ts",
+      "start_line": 4,
+      "end_line": 8,
+      "code": "export interface AuthToken {\n  token: string;\n  userId: string;\n  expiresAt: number;\n}",
+      "chunk_type": "interface",
+      "name": "AuthToken"
+    },
+    {
+      "file": "src/auth.ts",
+      "start_line": 10,
+      "end_line": 15,
+      "code": "export interface AuthResult {\n  success: boolean;\n  token?: string;\n  userId?: string;\n  error?: string;\n}",
+      "chunk_type": "interface",
+      "name": "AuthResult"
+    },
+    {
+      "file": "src/auth.ts",
+      "start_line": 17,
+      "end_line": 37,
+      "code": "/**\n * Authenticates user credentials against the database.\n * Verifies password hash and creates a new session token.\n */\nexport async function authenticateUser(email: string, passwordHash: string): Promise<AuthResult> {\n  const query = 'SELECT id, email, password_hash FROM users WHERE email = ?';\n  const user = await db.query(query, [email]);\n\n  if (!user || user.password_hash !== passwordHash) {\n    return { success: false, error: 'Invalid email or password' };\n  }\n\n  const token = `tok_${user.id}_${Date.now()}`;\n  await db.query('INSERT INTO sessions (user_id, token, created_at) VALUES (?, ?, ?)', [\n    user.id,\n    token,\n    Date.now(),\n  ]);\n\n  return { success: true, token, userId: user.id };\n}",
+      "chunk_type": "function",
+      "name": "authenticateUser"
+    },
+    {
+      "file": "src/auth.ts",
+      "start_line": 39,
+      "end_line": 47,
+      "code": "/**\n * Verifies whether a given authentication session token is valid and active.\n */\nexport function verifyToken(token: string): boolean {\n  if (!token || !token.startsWith('tok_')) {\n    return false;\n  }\n  return true;\n}",
+      "chunk_type": "function",
+      "name": "verifyToken"
+    },
+    {
+      "file": "src/auth.ts",
+      "start_line": 49,
+      "end_line": 54,
+      "code": "/**\n * Revokes an existing authentication token and terminates session.\n */\nexport async function logoutUser(token: string): Promise<void> {\n  await db.query('DELETE FROM sessions WHERE token = ?', [token]);\n}",
+      "chunk_type": "function",
+      "name": "logoutUser"
+    },
+    {
+      "file": "src/broken.js",
+      "start_line": 1,
+      "end_line": 4,
+      "code": "// Malformed JavaScript file with intentional syntax errors\nfunction brokenFunction( {\n  let x = ;\n  if (\n",
+      "chunk_type": "lines"
+    },
+    {
+      "file": "src/components/Button.tsx",
+      "start_line": 1,
+      "end_line": 1,
+      "code": "import React from 'react';",
+      "chunk_type": "block"
+    },
+    {
+      "file": "src/components/Button.tsx",
+      "start_line": 3,
+      "end_line": 7,
+      "code": "interface ButtonProps {\n  label: string;\n  onClick: () => void;\n  disabled?: boolean;\n}",
+      "chunk_type": "interface",
+      "name": "ButtonProps"
+    },
+    {
+      "file": "src/components/Button.tsx",
+      "start_line": 9,
+      "end_line": 15,
+      "code": "export const Button: React.FC<ButtonProps> = ({ label, onClick, disabled = false }) => {\n  return (\n    <button className=\"primary-btn\" onClick={onClick} disabled={disabled}>\n      <span>{label}</span>\n    </button>\n  );\n};",
+      "chunk_type": "function",
+      "name": "Button"
+    },
+    {
+      "file": "src/db.ts",
+      "start_line": 1,
+      "end_line": 7,
+      "code": "// Database Connection & Query Utility\nexport interface DatabaseConfig {\n  host: string;\n  port: number;\n  database: string;\n  poolSize: number;\n}",
+      "chunk_type": "interface",
+      "name": "DatabaseConfig"
+    },
+    {
+      "file": "src/db.ts",
+      "start_line": 9,
+      "end_line": 32,
+      "code": "export class DatabaseConnection {\n  private config: DatabaseConfig;\n  private isConnected: boolean = false;\n\n  constructor(config: DatabaseConfig) {\n    this.config = config;\n  }\n\n  public async connect(): Promise<void> {\n    this.isConnected = true;\n    console.log(`Connected to database ${this.config.database} on ${this.config.host}`);\n  }\n\n  public async query(sql: string, params: any[] = []): Promise<any> {\n    if (!this.isConnected) {\n      await this.connect();\n    }\n    return { executed: sql, params };\n  }\n\n  public async disconnect(): Promise<void> {\n    this.isConnected = false;\n  }\n}",
+      "chunk_type": "class",
+      "name": "DatabaseConnection"
+    },
+    {
+      "file": "src/db.ts",
+      "start_line": 13,
+      "end_line": 15,
+      "code": "  constructor(config: DatabaseConfig) {\n    this.config = config;\n  }",
+      "chunk_type": "method",
+      "name": "DatabaseConnection.constructor"
+    },
+    {
+      "file": "src/db.ts",
+      "start_line": 17,
+      "end_line": 20,
+      "code": "  public async connect(): Promise<void> {\n    this.isConnected = true;\n    console.log(`Connected to database ${this.config.database} on ${this.config.host}`);\n  }",
+      "chunk_type": "method",
+      "name": "DatabaseConnection.connect"
+    },
+    {
+      "file": "src/db.ts",
+      "start_line": 22,
+      "end_line": 27,
+      "code": "  public async query(sql: string, params: any[] = []): Promise<any> {\n    if (!this.isConnected) {\n      await this.connect();\n    }\n    return { executed: sql, params };\n  }",
+      "chunk_type": "method",
+      "name": "DatabaseConnection.query"
+    },
+    {
+      "file": "src/db.ts",
+      "start_line": 29,
+      "end_line": 31,
+      "code": "  public async disconnect(): Promise<void> {\n    this.isConnected = false;\n  }",
+      "chunk_type": "method",
+      "name": "DatabaseConnection.disconnect"
+    },
+    {
+      "file": "src/db.ts",
+      "start_line": 34,
+      "end_line": 39,
+      "code": "export const db = new DatabaseConnection({\n  host: 'localhost',\n  port: 5432,\n  database: 'app_production',\n  poolSize: 10,\n});",
+      "chunk_type": "block"
+    },
+    {
+      "file": "src/index.ts",
+      "start_line": 1,
+      "end_line": 6,
+      "code": "// Sample TypeScript File\ninterface User {\n  id: string;\n  name: string;\n  email: string;\n}",
+      "chunk_type": "interface",
+      "name": "User"
+    },
+    {
+      "file": "src/index.ts",
+      "start_line": 8,
+      "end_line": 22,
+      "code": "export class UserService {\n  private users: Map<string, User> = new Map();\n\n  public register(user: User): boolean {\n    if (this.users.has(user.id)) {\n      return false;\n    }\n    this.users.set(user.id, user);\n    return true;\n  }\n\n  public findById(id: string): User | undefined {\n    return this.users.get(id);\n  }\n}",
+      "chunk_type": "class",
+      "name": "UserService"
+    },
+    {
+      "file": "src/index.ts",
+      "start_line": 11,
+      "end_line": 17,
+      "code": "  public register(user: User): boolean {\n    if (this.users.has(user.id)) {\n      return false;\n    }\n    this.users.set(user.id, user);\n    return true;\n  }",
+      "chunk_type": "method",
+      "name": "UserService.register"
+    },
+    {
+      "file": "src/index.ts",
+      "start_line": 19,
+      "end_line": 21,
+      "code": "  public findById(id: string): User | undefined {\n    return this.users.get(id);\n  }",
+      "chunk_type": "method",
+      "name": "UserService.findById"
+    },
+    {
+      "file": "src/login.ts",
+      "start_line": 1,
+      "end_line": 3,
+      "code": "// User Login Workflow & Route Handler\nimport { authenticateUser } from './auth';\nimport { db } from './db';",
+      "chunk_type": "block"
+    },
+    {
+      "file": "src/login.ts",
+      "start_line": 5,
+      "end_line": 8,
+      "code": "export interface LoginRequest {\n  email: string;\n  passwordHash: string;\n}",
+      "chunk_type": "interface",
+      "name": "LoginRequest"
+    },
+    {
+      "file": "src/login.ts",
+      "start_line": 10,
+      "end_line": 14,
+      "code": "export interface LoginResponse {\n  statusCode: number;\n  message: string;\n  sessionToken?: string;\n}",
+      "chunk_type": "interface",
+      "name": "LoginResponse"
+    },
+    {
+      "file": "src/login.ts",
+      "start_line": 16,
+      "end_line": 46,
+      "code": "/**\n * Handles the end-to-end user login process.\n * 1. Validates incoming request credentials\n * 2. Invokes authenticateUser for credential verification\n * 3. Records login audit trail in database\n * 4. Returns session token to client\n */\nexport async function handleLogin(request: LoginRequest): Promise<LoginResponse> {\n  if (!request.email || !request.passwordHash) {\n    return { statusCode: 400, message: 'Missing credentials' };\n  }\n\n  // Authenticate user against auth service\n  const authResult = await authenticateUser(request.email, request.passwordHash);\n\n  if (!authResult.success) {\n    return { statusCode: 401, message: authResult.error || 'Authentication failed' };\n  }\n\n  // Update last login timestamp in database\n  await db.query('UPDATE users SET last_login = ? WHERE id = ?', [\n    Date.now(),\n    authResult.userId,\n  ]);\n\n  return {\n    statusCode: 200,\n    message: 'Login successful',\n    sessionToken: authResult.token,\n  };\n}",
+      "chunk_type": "function",
+      "name": "handleLogin"
+    }
+  ]
+}
