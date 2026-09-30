@@ -1,0 +1,29 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Pytest and testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Node / Vite frontend
+node_modules/
+dist/
+.vite/
+
+# OS-specific
+.DS_Store
+Thumbs.db

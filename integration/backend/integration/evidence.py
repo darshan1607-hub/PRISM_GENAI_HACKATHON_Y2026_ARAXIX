@@ -41,16 +41,20 @@ def from_semantic_result(r: dict) -> NormalizedEvidence:
     return NormalizedEvidence(
         file_path=str(r["file"]), start_line=r.get("start_line"), end_line=r.get("end_line"),
         snippet=str(r["code"]), source_type=SourceType.SEMANTIC,
-        symbol=r.get("name"), relevance=float(r.get("score", 0.0)))
+        symbol=r.get("name"), relevance=float(r.get("score", 0.0)),
+        metadata={"chunk_type": r.get("chunk_type")})
 
 
 def to_agent_evidence(n: NormalizedEvidence, idx: int, evidence_type: str):
     """Convert to Member 1's Evidence so the existing verifier works unchanged."""
     from backend.agent.verifier import Evidence
+    meta = {"normalized": n, "symbol": n.symbol, "is_mock": n.is_mock}
+    if n.metadata:
+        meta.update(n.metadata)
     return Evidence(
         id=f"ev-{idx:03d}", source_file=n.file_path, line_number=n.start_line,
         content=n.snippet, evidence_type=evidence_type, confidence=max(0.0, min(1.0, n.relevance)),
-        metadata={"normalized": n, "symbol": n.symbol, "is_mock": n.is_mock})
+        metadata=meta)
 
 
 def from_agent_evidence(e) -> NormalizedEvidence:

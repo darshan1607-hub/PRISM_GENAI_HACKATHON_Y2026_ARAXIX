@@ -22,26 +22,53 @@ class RealSemanticAdapter:
         self.repo = Path(repo_path)
         self._engine = None
 
+    def _resolve_repo(self) -> Path:
+        if self.repo.is_dir():
+            return self.repo
+        for candidate in ("semantics/demo_repo", "structural/demo_repo", "demo_repo"):
+            cp = Path(candidate)
+            if cp.is_dir():
+                return cp
+        return self.repo
+
     def _build(self):
-        if not self.repo.is_dir():
+        target_repo = self._resolve_repo()
+        if not target_repo.is_dir():
             raise SemanticUnavailable(f"Invalid repository path: {self.repo}")
-        if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
-            raise SemanticUnavailable("GEMINI_API_KEY not set; cannot build embeddings.")
+
         try:
             from backend.structural import RepositoryScanner, TreeSitterParser
-            from backend.semantic import CodeChunker, GeminiEmbeddingProvider, SemanticCodeSearch
-            files = RepositoryScanner(self.repo).scan()
+            from backend.semantic import (
+                CodeChunker,
+                SemanticCodeSearch,
+                GeminiEmbeddingProvider,
+                MockEmbeddingProvider,
+            )
+
+            files = RepositoryScanner(target_repo).scan()
             if not files:
-                raise SemanticUnavailable("No supported JS/TS source files in repository.")
+                raise SemanticUnavailable(f"No supported JS/TS source files in repository: {target_repo}")
+
             parser = TreeSitterParser()
             chunker = CodeChunker(parser=parser)
-            engine = SemanticCodeSearch(embedding_provider=GeminiEmbeddingProvider(),
-                                        chunker=chunker, metric="cosine")
-            engine.index_chunks(chunker.chunk_repository(files, parser=parser))
+
+            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+            if api_key and api_key.strip():
+                provider = GeminiEmbeddingProvider(api_key=api_key.strip())
+            else:
+                provider = MockEmbeddingProvider()
+
+            engine = SemanticCodeSearch(
+                embedding_provider=provider,
+                chunker=chunker,
+                metric="cosine",
+            )
+            chunks = chunker.chunk_repository(files, parser=parser)
+            engine.index_chunks(chunks)
             self._engine = engine
         except SemanticUnavailable:
             raise
-        except Exception as e:  # noqa
+        except Exception as e:
             raise SemanticUnavailable(f"Semantic index build failed: {e}") from e
 
     def search(self, query: str, top_k: int = 3) -> List[NormalizedEvidence]:

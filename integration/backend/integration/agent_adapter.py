@@ -29,5 +29,7 @@ class IntegrationCollector(EvidenceCollector):
                 continue
             self._seen.add(key)
             self._n += 1
-            out.append(to_agent_evidence(n, self._n, _EVTYPE.get(cap, "text_match")))
+            m_type = n.metadata.get("match_type")
+            ev_type = m_type if m_type in ("call_site", "declaration", "definition", "reference", "caller_context") else _EVTYPE.get(cap, "text_match")
+            out.append(to_agent_evidence(n, self._n, ev_type))
         return out

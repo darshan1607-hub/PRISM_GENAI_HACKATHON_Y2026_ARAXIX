@@ -1,5 +1,6 @@
 """IntegrationService: the only thing FastAPI talks to."""
 import os
+from pathlib import Path
 from backend.agent import AgentController
 from backend.integration.agent_adapter import IntegrationCollector
 from backend.integration.evidence import from_agent_evidence, EvidenceError
@@ -12,20 +13,28 @@ def use_mock() -> bool:
     return os.environ.get("USE_MOCK_SERVICES", "true").lower() == "true"
 
 
+def default_repo_path() -> str:
+    for candidate in ("semantics/demo_repo", "structural/demo_repo", "demo_repo"):
+        if Path(candidate).is_dir():
+            return candidate
+    return "demo_repo"
+
+
 class IntegrationService:
     def __init__(self, mock=None, repo_path=None, synthesizer=None):
         self.mock = use_mock() if mock is None else mock
-        self.repo_path = repo_path or os.environ.get("REPO_PATH", "demo_repo")
+        self.repo_path = repo_path or os.environ.get("REPO_PATH", default_repo_path())
         self.synth = synthesizer or Synthesizer(mock=self.mock)
         self._semantic = None if self.mock else RealSemanticAdapter(self.repo_path)
+        self._structural = None if self.mock else RealStructuralAdapter(self.repo_path)
 
     def repository_status(self) -> dict:
-        return {"mode": "MOCK" if self.mock else "REAL", "repo_path": None if self.mock else self.repo_path,
-                "structural_query_api": self.mock}
+        return {"mode": "MOCK" if self.mock else "REAL", "repo_path": None if self.mock else str(self.repo_path),
+                "structural_query_api": True if self.mock else RealStructuralAdapter.implemented}
 
     def investigate(self, question: str) -> dict:
-        semantic = MockSemanticAdapter() if self.mock else self._semantic
-        structural = MockStructuralAdapter() if self.mock else RealStructuralAdapter()
+        semantic = MockSemanticAdapter() if self.mock else (self._semantic or RealSemanticAdapter(self.repo_path))
+        structural = MockStructuralAdapter() if self.mock else (self._structural or RealStructuralAdapter(self.repo_path))
         collector = IntegrationCollector(semantic, structural)
         state = AgentController(collector=collector).investigate(question)
 
@@ -35,8 +44,11 @@ class IntegrationService:
                 evidence.append(from_agent_evidence(e))
             except EvidenceError as ex:
                 errors.append(str(ex))
-        if not self.mock and not RealStructuralAdapter.implemented:
-            errors.append("Structural analysis unavailable: Member 3 query API not implemented.")
+        if not self.mock:
+            if not Path(self.repo_path).is_dir():
+                errors.append(f"Invalid repository path: {self.repo_path}")
+            elif not RealStructuralAdapter.implemented:
+                errors.append("Structural analysis unavailable: Member 3 query API not implemented.")
 
         v = state.verification
         answer, synth_error = self.synth.synthesize(question, evidence, v)

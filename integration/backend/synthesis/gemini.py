@@ -27,7 +27,8 @@ class Synthesizer:
 
     def _call(self, prompt: str) -> str:
         from google import genai
-        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        client = genai.Client(api_key=key)
         return client.models.generate_content(model=self.model, contents=prompt).text or ""
 
     def synthesize(self, question, evidence, verification) -> Tuple[str, str]:
@@ -38,7 +39,8 @@ class Synthesizer:
         if self.mock:
             return ("[DEVELOPMENT MODE] Gemini not called. The evidence below is MOCK data, "
                     "not from a real repository.", "")
-        if not os.environ.get("GEMINI_API_KEY"):
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
             return ("Answer generation unavailable (GEMINI_API_KEY not set). Raw evidence is shown below.",
                     "Gemini synthesis skipped: GEMINI_API_KEY not set.")
         try:

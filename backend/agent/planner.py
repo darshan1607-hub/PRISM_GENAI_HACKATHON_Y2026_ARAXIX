@@ -93,7 +93,7 @@ class InvestigationPlanner:
 
     # Keyword patterns mapped to query types
     _CALLER_PATTERNS = [
-        r"\b(?:where\s+is|who\s+calls|callers\s+of|usages\s+of|references\s+to|where\s+.*?\s+used|used\s+in|invocations\s+of)\b",
+        r"\b(?:who\s+calls|callers\s+of|usages\s+of|references\s+to|where\s+.*?\s+used|used\s+in|invocations\s+of)\b",
         r"\b(?:find\s+callers|find\s+usages|find\s+references)\b",
     ]
     _DEFINITION_PATTERNS = [
@@ -169,7 +169,7 @@ class InvestigationPlanner:
 
         # Remove trailing usage clauses like "used", "located", "defined", "implemented"
         suffix_patterns = [
-            r"\s+(?:used|located|defined|declared|implemented|called)(?:\s+in\s+the\s+codebase)?$",
+            r"\s+(?:defined\s+and\s+who\s+calls\s+it|and\s+who\s+calls\s+it|flow\s+work\s+and\s+what\s+functions\s+are\s+involved|work\s+and\s+what\s+functions\s+are\s+involved|flow\s+work|used|located|defined|declared|implemented|called|flow|work)(?:\s+in\s+the\s+codebase)?$",
         ]
         for p in suffix_patterns:
             subject = re.sub(p, "", subject, flags=re.IGNORECASE)
@@ -268,6 +268,12 @@ class InvestigationPlanner:
                     step_id=2,
                     description=f"Trace downstream invocations and control flow",
                     tool_capability="call_graph",
+                    target=subject,
+                ),
+                InvestigationStep(
+                    step_id=3,
+                    description=f"Retrieve semantic execution context for '{subject}'",
+                    tool_capability="semantic_search",
                     target=subject,
                 ),
             ]
